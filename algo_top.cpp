@@ -100,8 +100,8 @@ for(ap_uint<8> degree=0; degree < angle; degree++){
 
 for(ap_uint<6> b = 0; b < 24; b++) {
   #pragma hls unroll
-  ap_uint<16> Ey;
-  ap_uint<16> Ex;
+  ap_fixed<16,12> Ey;
+  ap_fixed<16,12> Ex;
   ap_uint<16> j;
   ap_uint<8> phi;
 
@@ -118,14 +118,11 @@ for(ap_uint<6> b = 0; b < 24; b++) {
 
 
 
-
-
 Ey = sinphi[phi]*j;
 Eys[b] = Ey;
-//cout <<  Ey <<endl;
 Ex = cosphi[phi]*j;
 Exs[b] = Ex;
-//cout <<  Ex <<endl;
+
 }
 
 // Step 3: Pack the outputs
