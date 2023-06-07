@@ -1,154 +1,135 @@
-
+#include "algo_top_parameters.h"
 #include "algo_top.h"
 #include "cordic.h"
 #include <algorithm>
 #include <utility>
 
 #include "objects.h"
+#include "ap_fixed.h"
 using namespace std;
-using namespace algo;
 
+TowersInEta unpackInputLink(ap_uint<576> &link) {
+#pragma HLS INLINE
 
-void unpackInputLink(ap_uint<576> &ilink, Tower towers[TOWERS_IN_ETA]) {
-#pragma HLS PIPELINE II=9
-#pragma HLS ARRAY_PARTITION variable=towers complete dim=0
-//#pragma HLS INLINE
+TowersInEta tEta_;
 
-  ap_uint<576> word_576b_;
+  tEta_.towers[0]  = Tower(link( 31,   0));
+  tEta_.towers[1]  = Tower(link( 63,  32));
+  tEta_.towers[2]  = Tower(link( 95,  64));
+  tEta_.towers[3]  = Tower(link(127,  96));
+  tEta_.towers[4]  = Tower(link(159, 128));
+  tEta_.towers[5]  = Tower(link(191, 160));
+  tEta_.towers[6]  = Tower(link(223, 192));
+  tEta_.towers[7]  = Tower(link(255, 224));
+  tEta_.towers[8]  = Tower(link(287, 256));
+  tEta_.towers[9]  = Tower(link(319, 288));
+  tEta_.towers[10] = Tower(link(351, 320));
+  tEta_.towers[11] = Tower(link(383, 352));
+  tEta_.towers[12] = Tower(link(415, 384));
+  tEta_.towers[13] = Tower(link(447, 416));
+  tEta_.towers[14] = Tower(link(479, 448));
+  tEta_.towers[15] = Tower(link(511, 480));
+  tEta_.towers[16] = Tower(link(543, 512));
 
-  word_576b_ = ilink.read();
-
-  towers[0]  = Tower(word_576b_( 31,   0));
-  towers[1]  = Tower(word_576b_( 63,  32));
-  towers[2]  = Tower(word_576b_( 95,  64));
-  towers[3]  = Tower(word_576b_(127,  96));
-  towers[4]  = Tower(word_576b_(159, 128));
-  towers[5]  = Tower(word_576b_(191, 160));
-  towers[6]  = Tower(word_576b_(223, 192));
-  towers[7]  = Tower(word_576b_(255, 224));
-  towers[8]  = Tower(word_576b_(287, 256));
-  towers[9]  = Tower(word_576b_(319, 288));
-  towers[10] = Tower(word_576b_(351, 320));
-  towers[11] = Tower(word_576b_(383, 352));
-  towers[12] = Tower(word_576b_(415, 384));
-  towers[13] = Tower(word_576b_(447, 416));
-  towers[14] = Tower(word_576b_(479, 448));
-  towers[15] = Tower(word_576b_(511, 480));
-  towers[16] = Tower(word_576b_(543, 512));
-
-  return;
+  return tEta_;
 }
 
-void packOutput(ap_fixed<16,12> a[0], ap_uint<576> &olink){
+void OutputLinkPack(ap_uint<16> Exs[24], ap_uint<16> Eys[24], ap_uint<576> link_out[N_OUTPUT_LINKS]){
+#pragma HLS ARRAY_PARTITION variable=Exs complete dim=0
+#pragma HLS ARRAY_PARTITION variable=Eys complete dim=0
+#pragma HLS ARRAY_PARTITION variable=link_out complete dim=0
 #pragma HLS PIPELINE II=9
-#pragma HLS ARRAY_PARTITION variable=a complete dim=0
-//#pragma HLS INLINE
+#pragma HLS LATENCY min=9
 
-  ap_uint<576> word_576b_;
+link_out[0] = 0;
+size_t start = 0;
+link0OutputLoop: for (size_t tower = 0; tower < 24; tower++) {
+                  #pragma HLS UNROLL
+                  size_t end = start + 15;
+                  link_out[0].range(end, start) = Exs[tower];
+                  start += 16;
+}
 
-
-  word_576b_(15, 0) = (ap_uint<16>) a[0];
-  word_576b_(31, 16) = (ap_uint<16>) a[1];
-  word_576b_(47, 32) = (ap_uint<16>) a[2];
-  word_576b_(63, 48) = (ap_uint<16>) a[3];
-  word_576b_(79, 64) = (ap_uint<16>) a[4];
-  word_576b_(95, 80) = (ap_uint<16>) a[5];
-  word_576b_(111, 96) = (ap_uint<16>) a[6];
-  word_576b_(127, 112) = (ap_uint<16>) a[7];
-  word_576b_(143, 128) = (ap_uint<16>) a[8];
-  word_576b_(159, 144) = (ap_uint<16>) a[9];
-  word_576b_(175, 160) = (ap_uint<16>) a[10];
-  word_576b_(191, 176) = (ap_uint<16>) a[11];
-  word_576b_(207, 192) = (ap_uint<16>) a[12];
-  word_576b_(223, 208) = (ap_uint<16>) a[13];
-  word_576b_(239, 224) = (ap_uint<16>) a[14];
-  word_576b_(255, 240) = (ap_uint<16>) a[15];
-  word_576b_(271, 256) = (ap_uint<16>) a[16];
-  word_576b_(287, 272) = (ap_uint<16>) a[17];
-  word_576b_(303, 288) = (ap_uint<16>) a[18];
-  word_576b_(319, 304) = (ap_uint<16>) a[19];
-  word_576b_(335, 320) = (ap_uint<16>) a[20];
-  word_576b_(351, 336) = (ap_uint<16>) a[21];
-  word_576b_(367, 352) = (ap_uint<16>) a[22];
-  word_576b_(383, 368) = (ap_uint<16>) a[23];
-  word_576b_(575, 384) = 0;
-  ap_uint<576> r; //r.last = 0; r.user = 0;
-  r = word_576b_;
-  
-  olink.write(r);
-
-  return ;
+link_out[1] = 0;
+start = 0;
+link1OutputLoop: for (size_t tower = 0; tower < 24; tower++) {
+                  #pragma HLS UNROLL
+                  size_t end = start + 15;
+                  link_out[1].range(end, start) = Eys[tower];
+                  start += 16;
+}
 }
 
 void algo_top(ap_uint<576> link_in[N_INPUT_LINKS], ap_uint<576> link_out[N_OUTPUT_LINKS]) {
-
-#pragma HLS PIPELINE II=9
-//#pragma HLS INTERFACE ap_ctrl_hs port=return
-
 #pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
 #pragma HLS ARRAY_PARTITION variable=link_out complete dim=0
+#pragma HLS PIPELINE II=9
+#pragma HLS INTERFACE ap_ctrl_hs port=return
 
-  // Step 1: Unpack links
-  // Input is 64 links carrying 32phix34eta towers
-  Tower towers[TOWERS_IN_PHI][TOWERS_IN_ETA];
-  #pragma HLS ARRAY_PARTITION variable=towers complete dim=0
-
-	  for (size_t ilink = 0; ilink < N_INPUT_LINKS; ilink++) {
-	      #pragma LOOP UNROLL
-	      #pragma HLS latency min=1
-	    size_t iEta = ilink;
-	    unpackInputLink(link_in[iEta], &towers[ilink][0]);
-	  }
+// Step 1: Unpack links
+// Input is 32 links carrying 32phix17eta towers
+TowersInEta towersInEta[TOWERS_IN_PHI];
+#pragma HLS ARRAY_PARTITION variable=towersInEta complete dim=0
 
 
-   // Step 2: MET Algo goes here
-  ap_fixed<16,12> Exs[24];
-#pragma HLS ARRAY_PARTITION variable=Exs complete dim=0
-  ap_fixed<16,12> Eys[24];
-#pragma HLS ARRAY_PARTITION variable=Eys complete dim=0
-  COS_SIN_TYPE sinphi[angle];
-#pragma HLS ARRAY_PARTITION variable=sinphi complete dim=0
-  COS_SIN_TYPE cosphi[angle];
-#pragma HLS ARRAY_PARTITION variable=cosphi complete dim=0
-  ap_fixed<16,12> Ey; ap_fixed<16,12> Ex;
+for (size_t ilink = 0; ilink < N_INPUT_LINKS; ilink++) {
+  #pragma LOOP UNROLL
+  size_t iEta = ilink;
+  towersInEta[ilink] = unpackInputLink(link_in[iEta]);
 
-  for (ap_uint<8> c = 0; c < angle; c++) {
-       #pragma HLS unroll
-	 THETA_TYPE  radian= (c+2.5)*0.0174533; /* sin and cos calculation*/
-   cordic(radian, sinphi[c],cosphi[c]);
-    }
-
-  for (ap_uint<5> b = 4; b < 28; b++) {
-       #pragma HLS unroll
-       #pragma HLS latency min=1
-
-      ap_uint<8> phi;
-
-	       if (b<36)
-	  		 phi=180*b/36; /*calulating theta of the respective tower*/
-	       else
-	       phi= -180*(72-b)/36;
-
-	    ap_uint<16> j;
-
-	    j= towers[b][0].tower_et() + towers[b][1].tower_et() + towers[b][2].tower_et() + towers[b][3].tower_et() + towers[b][4].tower_et()
-	       + towers[b][5].tower_et() + towers[b][6].tower_et() + towers[b][7].tower_et() + towers[b][8].tower_et() + towers[b][9].tower_et()
-	  	   + towers[b][10].tower_et() + towers[b][11].tower_et() + towers[b][12].tower_et() + towers[b][13].tower_et() + towers[b][14].tower_et()
-	  		 + towers[b][15].tower_et() + towers[b][16].tower_et() ;
-
-
-  		Ey = sinphi[phi]*j;
-  		Eys[b-4] = Ey;
-
-  		Ex = cosphi[phi]*j;
-      Exs[b-4] = Ex;
-  	}
-  // Step 3: Pack the outputs
-
-    packOutput(&Exs[0],link_out[0]);
-    packOutput(&Eys[0],link_out[1]);
 }
 
+   // Step 2: MET Algo goes here
+ap_uint<16> Exs[24];
+ap_uint<16> Eys[24];
+#pragma HLS ARRAY_PARTITION variable=Exs complete dim=0
+#pragma HLS ARRAY_PARTITION variable=Eys complete dim=0
+
+COS_SIN_TYPE sinphi[angle];
+COS_SIN_TYPE cosphi[angle];
+#pragma HLS ARRAY_PARTITION variable=sinphi complete dim=0
+#pragma HLS ARRAY_PARTITION variable=cosphi complete dim=0
+
+/*---sinphi and cosphi calculation through CORDIC---*/
+
+for(ap_uint<8> degree=0; degree < angle; degree++){
+  #pragma HLS unroll
+  THETA_TYPE theta = (degree+2.5)*0.01745329;  /*---degree to radian conversion---*/
+  cordic(theta, sinphi[degree], cosphi[degree]);
+}
+
+for(ap_uint<6> b = 0; b < 24; b++) {
+  #pragma hls unroll
+  ap_uint<16> Ey;
+  ap_uint<16> Ex;
+  ap_uint<16> j;
+  ap_uint<8> phi;
+
+ 	       if (b<36)
+ 	  		 phi=180*(b+4)/36; /*calulating theta of the respective tower*/
+ 	       else
+ 	         phi= -180*(72-(b+4))/36;
+
+  j = towersInEta[b+4].towers[0].tower_et()  + towersInEta[b+4].towers[1].tower_et()  + towersInEta[b+4].towers[2].tower_et()  + towersInEta[b+4].towers[3].tower_et()  +
+      towersInEta[b+4].towers[4].tower_et()  + towersInEta[b+4].towers[5].tower_et()  + towersInEta[b+4].towers[6].tower_et()  + towersInEta[b+4].towers[7].tower_et()  +
+      towersInEta[b+4].towers[8].tower_et()  + towersInEta[b+4].towers[9].tower_et()  + towersInEta[b+4].towers[10].tower_et() + towersInEta[b+4].towers[11].tower_et() +
+      towersInEta[b+4].towers[12].tower_et() + towersInEta[b+4].towers[13].tower_et() + towersInEta[b+4].towers[14].tower_et() + towersInEta[b+4].towers[15].tower_et() +
+      towersInEta[b+4].towers[16].tower_et();
 
 
 
+
+
+Ey = sinphi[phi]*j;
+Eys[b] = Ey;
+//cout <<  Ey <<endl;
+Ex = cosphi[phi]*j;
+Exs[b] = Ex;
+//cout <<  Ex <<endl;
+}
+
+// Step 3: Pack the outputs
+
+OutputLinkPack(Exs, Eys, link_out);
+
+}
